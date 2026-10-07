@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 Asian Games Contest - By Vier</title>
+    <!-- Tailwind CSS per una grafica moderna e pulita -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        themeOrange: '#EA580C', /* Arancione principale */
+                        themeYellow: '#EAB308', /* Giallo principale */
+                        themeDark: '#7C2D12',   /* Arancione scuro/marrone per hover e footer */
+                        themeLight: '#FFF7ED'   /* Sfondo chiarissimo aranciato */
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- SheetJS per leggere e SCRIVERE file Excel/Sheets -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- jsPDF e html2canvas per creare il file PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-themeLight text-gray-800 min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- HEADER UFFICIALE CON LOGO E GRADIENTE -->
+    <header class="bg-gradient-to-r from-themeOrange to-themeYellow text-white shadow-lg border-b-4 border-themeDark">
+        <div class="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <img src="logo.jpg" alt="Logo Asian Games 2026" class="h-16 w-auto object-contain bg-white rounded shadow p-1 border-2 border-themeYellow" onerror="this.style.display='none'">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-wider text-white drop-shadow-md">ASIAN GAMES 2026</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CORPO PRINCIPALE -->
+    <main class="max-w-4xl mx-auto px-4 py-8 flex-grow w-full">
+
+        <!-- SEZIONE 1: LOGIN / INFO PARTECIPANTE -->
+        <section id="user-section" class="bg-white rounded-xl shadow-md p-6 mb-8 border-t-4 border-themeOrange">
+            <h2 class="text-xl font-bold text-themeOrange mb-4 flex items-center">
+                <span class="bg-themeOrange text-white rounded-full w-7 h-7 inline-flex items-center justify-center text-sm mr-2">1</span>
+                Il tuo Profilo Partecipante
+            </h2>
+            <div class="max-w-md">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Il tuo Nickname:</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="participant-nickname" placeholder="Es. DragoRosso2026" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-themeOrange focus:outline-none">
+                    <button id="btn-start" onclick="unlockEvents()" class="bg-gradient-to-r from-themeOrange to-themeYellow hover:from-themeDark hover:to-themeOrange text-white font-bold px-4 py-2 rounded-lg shadow transition whitespace-nowrap">Conferma</button>
+                </div>
+                <div class="text-xs text-gray-600 bg-orange-50 p-3 rounded-lg border border-orange-200 mt-4">
+                    💡 Inserisci un nickname unico e clicca "Conferma" per sbloccare le schede. Scegli con cura 1 opzione per ogni evento! Puoi anche salvare in bozza e riprendere più tardi.
+                </div>
+            </div>
+        </section>
+
+        <!-- SEZIONE 2: LISTA DEGLI EVENTI -->
+        <section id="events-section" class="mb-8 hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-themeOrange flex items-center">
+                    <span class="bg-themeOrange text-white rounded-full w-7 h-7 inline-flex items-center justify-center text-sm mr-2">2</span>
+                    Pronostici Eventi
+                </h2>
+                <span id="events-counter" class="text-xs font-bold bg-themeYellow text-themeDark px-3 py-1 rounded-full">0 / 0 Compilati</span>
+            </div>
+            
+            <div id="events-container" class="space-y-4">
+                <div class="bg-white p-6 rounded-xl shadow border border-dashed border-gray-300 text-center text-gray-400">
+                    Caricamento eventi in corso...
+                </div>
+            </div>
+        </section>
+
+        <!-- SEZIONE 3: PULSANTI DI INVIO / PDF -->
+        <section id="action-section" class="bg-white rounded-xl shadow-md p-6 mb-8 text-center hidden">
+            <h3 class="text-lg font-bold text-themeOrange mb-2">Salva o Invia i tuoi pronostici</h3>
+            <p id="action-msg" class="text-sm text-gray-600 mb-6">Usa il tasto Salva se vuoi continuare in un secondo momento, oppure Invia se hai completato tutti gli eventi.</p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <button id="btn-save-draft" onclick="saveDraft()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg shadow transition flex items-center space-x-2">
+                    <span>💾 Salva in Bozza ed Esci</span>
+                </button>
+                <button onclick="generatePDF()" class="bg-gray-800 hover:bg-black text-white font-bold px-6 py-3 rounded-lg shadow transition flex items-center space-x-2">
+                    <span>📄 Scarica Riepilogo PDF</span>
+                </button>
+                <button id="btn-submit" onclick="submitContest()" class="bg-gradient-to-r from-themeOrange to-themeYellow hover:from-themeDark hover:to-themeOrange text-white font-extrabold px-8 py-3 rounded-lg shadow-lg transition flex items-center space-x-2 border-2 border-themeYellow">
+                    <span>🚀 Invia Definitivamente all'Admin</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ACCESSO ADMIN -->
+        <div class="text-center mt-12 mb-4">
+            <button onclick="toggleAdminLogin()" class="text-xs text-orange-700 hover:underline flex items-center justify-center mx-auto space-x-1">
+                <span>🔒 Area Riservata Admin</span>
+            </button>
+        </div>
+
+        <!-- PANNELLO ADMIN -->
+        <div id="admin-panel" class="bg-white rounded-xl shadow-2xl p-6 border-4 border-themeYellow hidden mb-12">
+            <div class="flex justify-between items-center mb-6 border-b pb-4">
+                <h3 class="text-xl font-black text-themeOrange">🛠️ Pannello di Controllo Admin</h3>
+                <button onclick="toggleAdminLogin()" class="text-sm text-red-500 font-bold hover:underline">Chiudi X</button>
+            </div>
+
+            <!-- Login Admin Form -->
+            <div id="admin-login-box" class="max-w-xs mx-auto text-center py-6">
+                <p class="text-sm mb-3 text-gray-600">Inserisci la password di sblocco:</p>
+                <input type="password" id="admin-pass" placeholder="Password..." class="w-full px-4 py-2 border rounded mb-3 text-center focus:outline-none focus:ring-2 focus:ring-themeOrange">
+                <button onclick="verifyAdmin()" class="w-full bg-themeOrange text-white font-bold py-2 rounded shadow hover:bg-themeDark transition">Accedi</button>
+            </div>
+
+            <!-- Dashboard Admin -->
+            <div id="admin-dashboard" class="hidden">
+                <div class="flex border-b mb-6 space-x-4">
+                    <button onclick="switchAdminTab('tab-excel')" id="btn-tab-excel" class="pb-2 font-bold text-themeOrange border-b-2 border-themeOrange">1. Carica Excel</button>
+                    <button onclick="switchAdminTab('tab-risposte')" id="btn-tab-risposte" class="pb-2 font-bold text-gray-400 hover:text-themeOrange">2. Risposte Esatte</button>
+                    <button onclick="switchAdminTab('tab-ranking')" id="btn-tab-ranking" class="pb-2 font-bold text-gray-400 hover:text-themeOrange">3. Ranking & Giocatori</button>
+                </div>
+
+                <div id="tab-excel" class="space-y-4">
+                    <h4 class="font-bold text-gray-700">Carica il file Excel degli Eventi</h4>
+                    <p class="text-xs text-gray-500">Il file deve contenere le colonne: <span class="font-semibold text-themeOrange">Data, Sport, Evento, Picking #A, Picking #B, Picking #C, Picking #field</span></p>
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-themeOrange hover:file:bg-orange-100">
+                    <button onclick="handleExcelUpload()" class="bg-themeOrange text-white font-bold px-4 py-2 rounded shadow text-sm hover:bg-themeDark transition">Elabora e Pubblica Eventi</button>
+                </div>
+
+                <div id="tab-risposte" class="space-y-4 hidden">
+                    <h4 class="font-bold text-gray-700">Imposta le Risposte Corrette per ciascun evento</h4>
+                    <div id="admin-answers-container" class="space-y-3 max-h-96 overflow-y-auto pr-2"></div>
+                    <button onclick="saveCorrectAnswers()" class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 rounded shadow text-sm">Salva Risposte Corrette</button>
+                </div>
+
+                <div id="tab-ranking" class="space-y-4 hidden">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-gray-700">Tabella Ranking & Pronostici</h4>
+                        <div class="space-x-2 flex">
+                            <button onclick="loadParticipantsData()" class="text-xs bg-orange-100 text-themeOrange px-3 py-1 rounded font-bold hover:bg-orange-200 transition">🔄 Aggiorna</button>
+                            <button onclick="exportToGoogleSheets()" class="text-xs bg-green-100 text-green-700 border border-green-300 px-3 py-1 rounded font-bold hover:bg-green-200 transition flex items-center">📥 Esporta per Fogli Google</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-themeOrange text-white">
+                                    <th class="p-2">Pos</th>
+                                    <th class="p-2">Nickname</th>
+                                    <th class="p-2">Stato</th>
+                                    <th class="p-2">Punteggio</th>
+                                    <th class="p-2 text-center">Azioni / Pronostici</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ranking-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-themeDark text-orange-200 text-xs py-4 text-center border-t border-orange-900">
+        <p>2026 Asian Games Contest Hub • Grafica ufficiale Arancione e Giallo • Sviluppato per Gualtiero</p>
+    </footer>
+
+    <!-- MODALE DETTAGLIO PRONOSTICO PARTECIPANTE -->
+    <div id="detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl max-h-[80vh] overflow-y-auto border-t-4 border-themeOrange">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h4 id="modal-title" class="font-bold text-themeOrange text-lg">Pronostico Giocatore</h4>
+                <button onclick="closeModal()" class="text-red-500 font-bold text-sm">Chiudi X</button>
+            </div>
+            <div id="modal-content" class="space-y-2 text-sm"></div>
+        </div>
+    </div>
+
+    <!-- LOGICA FIREBASE E GIOCO -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, setDoc, getDocs, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYOB8sCakV4TqnL60TLM8s31CmNPcwESw",
+            authDomain: "asiangames2026-e3b1e.firebaseapp.com",
+            projectId: "asiangames2026-e3b1e",
+            storageBucket: "asiangames2026-e3b1e.firebasestorage.app",
+            messagingSenderId: "897993177226",
+            appId: "1:897993177226:web:fcf266e8a332049c9a1573"
+        };
+
+        let db = null;
+        let isFirebaseActive = false;
+        
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            isFirebaseActive = true;
+        } catch(e) {
+            console.warn("Firebase non configurato.");
+        }
+
+        window.eventsData = [];
+        window.userSelections = {};
+        window.correctAnswers = {};
+        window.lastParticipantsList = []; 
+        window.hasSubmittedFinal = false; // VARIABILE DI SICUREZZA PER IL BLOCCO ANTICHEAT
+
+        async function fetchEventsFromCloud() {
+            if(isFirebaseActive && db) {
+                try {
+                    const docSnap = await getDoc(doc(db, "settings", "eventsData"));
+                    if(docSnap.exists()) {
+                        window.eventsData = docSnap.data().events || [];
+                        localStorage.setItem('asian_events', JSON.stringify(window.eventsData));
+                    }
+                } catch(err) {
+                    console.error("Errore recupero eventi cloud:", err);
+                }
+            }
+            if(!window.eventsData.length) {
+                const savedEvents = localStorage.getItem('asian_events');
+                if(savedEvents) {
+                    window.eventsData = JSON.parse(savedEvents);
+                }
+            }
+            
+            const count = Object.keys(window.userSelections).length;
+            const total = window.eventsData ? window.eventsData.length : 0;
+            const counterElement = document.getElementById('events-counter');
+            if (counterElement) {
+                counterElement.innerText = `${count} / ${total} Compilati`;
+            }
+        }
+
+        window.unlockEvents = async function() {
+            const nickInput = document.getElementById('participant-nickname');
+            const nick = nickInput.value.trim();
+            if(!nick) {
+                alert("Per favore, inserisci un Nickname per iniziare!");
+                nickInput.focus();
+                return;
+            }
+            
+            await fetchEventsFromCloud();
+
+            if(!window.eventsData || window.eventsData.length === 0) {
+                alert("L'Admin non ha ancora caricato gli eventi del contest! Riprova più tardi.");
+                return;
+            }
+
+            window.hasSubmittedFinal = false; // Reset dello stato
+
+            if(isFirebaseActive && db) {
+                try {
+                    const docSnap = await getDoc(doc(db, "participants", nick));
+                    if(docSnap.exists()) {
+                        const data = docSnap.data();
+                        window.userSelections = data.selections || {};
+                        
+                        // CONTROLLO ANTICHEAT E SOVRASCRITTURA
+                        if(data.isDraft === false) {
+                            window.hasSubmittedFinal = true;
+                            alert(`Bentornato ${nick}! Attenzione: hai già inviato i tuoi pronostici definitivi in precedenza. Le tue schede sono bloccate in sola lettura e non possono più essere modificate.`);
+                        } else {
+                            alert(`Bentornato ${nick}! Abbiamo recuperato la tua bozza salvata, puoi riprendere la compilazione.`);
+                        }
+                    }
+                } catch(err) {
+                    console.error("Errore recupero dati utente:", err);
+                }
+            } else {
+                let localParts = JSON.parse(localStorage.getItem('local_participants') || "{}");
+                if(localParts[nick]) {
+                    const data = localParts[nick];
+                    window.userSelections = data.selections || {};
+                    if(data.isDraft === false) {
+                        window.hasSubmittedFinal = true;
+                        alert(`Bentornato ${nick}! Attenzione: hai già inviato i tuoi pronostici definitivi in precedenza. Le tue schede sono bloccate in sola lettura e non possono più essere modificate.`);
+                    } else {
+                        alert(`Bentornato ${nick}! Abbiamo recuperato la tua bozza salvata localmente, puoi riprendere la compilazione.`);
+                    }
+                }
+            }
+            
+            nickInput.disabled = true;
+            const btnStart = document.getElementById('btn-start');
+            btnStart.innerText = "✓ Confermato";
+            btnStart.disabled = true;
+            
+            /* Aggiorniamo le classi per lo stato confermato */
+            btnStart.className = "bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-lg shadow transition whitespace-nowrap";
+
+            renderEvents();
+            renderAdminAnswersSetup();
+
+            const count = Object.keys(window.userSelections).length;
+            const total = window.eventsData.length;
+            document.getElementById('events-counter').innerText = `${count} / ${total} Compilati`;
+
+            document.getElementById('events-section').classList.remove('hidden');
+            
+            // GESTIONE VISIBILITA' BOTTONI IN BASE ALLO STATO DEFINITIVO
+            const btnSave = document.getElementById('btn-save-draft');
+            const btnSubmit = document.getElementById('btn-submit');
+            const actionMsg = document.getElementById('action-msg');
+            
+            if (window.hasSubmittedFinal) {
+                if(btnSave) btnSave.classList.add('hidden');
+                if(btnSubmit) btnSubmit.classList.add('hidden');
+                if(actionMsg) actionMsg.innerHTML = "<strong class='text-red-500'>⚠️ Le tue scelte sono definitive, bloccate e non possono essere modificate.</strong>";
+            } else {
+                if(btnSave) btnSave.classList.remove('hidden');
+                if(btnSubmit) btnSubmit.classList.remove('hidden');
+                if(actionMsg) actionMsg.innerText = "Usa il tasto Salva se vuoi continuare in un secondo momento, oppure Invia se hai completato tutti gli eventi.";
+            }
+
+            document.getElementById('action-section').classList.remove('hidden');
+        }
+
+        window.handleExcelUpload = async function() {
+            const fileInput = document.getElementById('excel-file-input');
+            if(!fileInput.files.length) {
+                alert("Seleziona prima un file Excel!");
+                return;
+            }
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                const json = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+
+                if(json.length === 0) {
+                    alert("Il file Excel è vuoto!");
+                    return;
+                }
+
+                window.eventsData = json.map((row, index) => ({
+                    id: index + 1,
+                    data: row['Data'] || row['data'] || 'Data mancante',
+                    sport: row['Sport'] || row['sport'] || 'Sport',
+                    evento: row['Evento'] || row['evento'] || `Evento ${index + 1}`,
+                    A: row['Picking #A'] || row['Picking A'] || row['A'] || 'Atleta A mancante',
+                    B: row['Picking #B'] || row['Picking B'] || row['B'] || 'Atleta B mancante',
+                    C: row['Picking #C'] || row['Picking C'] || row['C'] || 'Atleta C mancante',
+                    field: row['Picking #field'] || row['Picking field'] || row['field'] || 'Field mancante'
+                }));
+
+                if(isFirebaseActive && db) {
+                    try {
+                        await setDoc(doc(db, "settings", "eventsData"), { events: window.eventsData });
+                    } catch(err) {
+                        console.error("Errore salvataggio eventi su Firebase:", err);
+                    }
+                }
+
+                localStorage.setItem('asian_events', JSON.stringify(window.eventsData));
+                renderAdminAnswersSetup();
+                
+                const total = window.eventsData.length;
+                const counterElement = document.getElementById('events-counter');
+                if (counterElement) {
+                    counterElement.innerText = `0 / ${total} Compilati`;
+                }
+
+                alert(`Caricati e pubblicati con successo ${total} eventi online! I partecipanti ora li vedranno subito.`);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('events-container');
+            if(!window.eventsData.length) return;
+
+            container.innerHTML = '';
+            
+            // Stile per label e attributo disabled se l'utente è bloccato
+            const labelClass = window.hasSubmittedFinal 
+                ? "flex items-center space-x-2 p-2 rounded border border-gray-200 bg-gray-100 opacity-70 cursor-not-allowed" 
+                : "flex items-center space-x-2 p-2 rounded border border-gray-200 hover:bg-orange-50 cursor-pointer transition";
+            const disabledAttr = window.hasSubmittedFinal ? 'disabled' : '';
+
+            window.eventsData.forEach((ev) => {
+                const preScelta = window.userSelections[ev.id]?.key || null;
+
+                const div = document.createElement('div');
+                div.className = "bg-white p-5 rounded-xl shadow-md border-l-4 border-themeOrange mb-4";
+                div.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+                        <span class="text-xs bg-orange-100 text-themeOrange font-bold px-2 py-1 rounded mb-1 sm:mb-0">📅 ${ev.data} • 🏆 ${ev.sport}</span>
+                        <span class="text-xs font-semibold text-gray-500">Evento #${ev.id}</span>
+                    </div>
+                    <h3 class="font-bold text-lg text-gray-800 mb-3">${ev.evento}</h3>
+                    <p class="text-xs text-gray-500 mb-2">Seleziona 1 sola opzione:</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <label class="${labelClass}">
+                            <input type="radio" name="event_${ev.id}" value="A" ${preScelta === 'A' ? 'checked' : ''} ${disabledAttr} onchange="selectOption(${ev.id}, 'A', '${ev.A.replace(/'/g, "\\'")}')" class="text-themeOrange focus:ring-themeOrange">
+                            <span class="text-sm"><strong>[A - 15 pt]:</strong> ${ev.A}</span>
+                        </label>
+                        <label class="${labelClass}">
+                            <input type="radio" name="event_${ev.id}" value="B" ${preScelta === 'B' ? 'checked' : ''} ${disabledAttr} onchange="selectOption(${ev.id}, 'B', '${ev.B.replace(/'/g, "\\'")}')" class="text-themeOrange focus:ring-themeOrange">
+                            <span class="text-sm"><strong>[B - 18 pt]:</strong> ${ev.B}</span>
+                        </label>
+                        <label class="${labelClass}">
+                            <input type="radio" name="event_${ev.id}" value="C" ${preScelta === 'C' ? 'checked' : ''} ${disabledAttr} onchange="selectOption(${ev.id}, 'C', '${ev.C.replace(/'/g, "\\'")}')" class="text-themeOrange focus:ring-themeOrange">
+                            <span class="text-sm"><strong>[C - 25 pt]:</strong> ${ev.C}</span>
+                        </label>
+                        <label class="${labelClass}">
+                            <input type="radio" name="event_${ev.id}" value="field" ${preScelta === 'field' ? 'checked' : ''} ${disabledAttr} onchange="selectOption(${ev.id}, 'field', '${ev.field.replace(/'/g, "\\'")}')" class="text-themeOrange focus:ring-themeOrange">
+                            <span class="text-sm"><strong>[field - 10 pt]:</strong> ${ev.field}</span>
+                        </label>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.selectOption = function(eventId, choiceKey, choiceText) {
+            if(window.hasSubmittedFinal) return; // Sicurezza extra
+            window.userSelections[eventId] = { key: choiceKey, text: choiceText };
+            const count = Object.keys(window.userSelections).length;
+            const total = window.eventsData.length;
+            document.getElementById('events-counter').innerText = `${count} / ${total} Compilati`;
+        }
+
+        window.saveDraft = async function() {
+            if (window.hasSubmittedFinal) {
+                alert("Non puoi salvare: hai già confermato in precedenza le tue scelte in modo definitivo.");
+                return;
+            }
+
+            const nickname = document.getElementById('participant-nickname').value.trim();
+            const payload = {
+                nickname: nickname,
+                selections: window.userSelections,
+                timestamp: new Date().toISOString(),
+                isDraft: true 
+            };
+
+            if(isFirebaseActive && db) {
+                try {
+                    await setDoc(doc(db, "participants", nickname), payload);
+                    alert("💾 Bozza salvata con successo! Puoi chiudere la pagina e tornare quando vuoi reinserendo il tuo nickname.");
+                } catch(err) {
+                    console.error(err);
+                    alert("Errore durante il salvataggio.");
+                }
+            } else {
+                let localParts = JSON.parse(localStorage.getItem('local_participants') || "{}");
+                localParts[nickname] = payload;
+                localStorage.setItem('local_participants', JSON.stringify(localParts));
+                alert("💾 Bozza salvata in locale con successo!");
+            }
+        }
+
+        window.submitContest = async function() {
+            if (window.hasSubmittedFinal) {
+                alert("Non puoi inviare: hai già confermato in precedenza le tue scelte in modo definitivo.");
+                return;
+            }
+
+            const nickname = document.getElementById('participant-nickname').value.trim();
+            if(Object.keys(window.userSelections).length < window.eventsData.length) {
+                alert(`Hai completato ${Object.keys(window.userSelections).length} su ${window.eventsData.length} eventi. Usa il tasto "Salva in Bozza" se vuoi finire dopo!`);
+                return;
+            }
+
+            const payload = {
+                nickname: nickname,
+                selections: window.userSelections,
+                timestamp: new Date().toISOString(),
+                isDraft: false 
+            };
+
+            if(isFirebaseActive && db) {
+                try {
+                    await setDoc(doc(db, "participants", nickname), payload);
+                    window.hasSubmittedFinal = true; // Aggiorna lo stato localmente
+                    
+                    // Ridisegna la schermata per applicare subito i blocchi di sicurezza
+                    document.getElementById('btn-save-draft').classList.add('hidden');
+                    document.getElementById('btn-submit').classList.add('hidden');
+                    document.getElementById('action-msg').innerHTML = "<strong class='text-red-500'>⚠️ Le tue scelte sono definitive, bloccate e non possono essere modificate.</strong>";
+                    renderEvents(); 
+
+                    alert("Pronostici confermati e inviati con successo all'Admin in modo definitivo! 🎉");
+                } catch(err) {
+                    console.error(err);
+                    alert("Errore di invio su Firebase. Salva il tuo PDF come backup.");
+                }
+            } else {
+                let localParts = JSON.parse(localStorage.getItem('local_participants') || "{}");
+                localParts[nickname] = payload;
+                localStorage.setItem('local_participants', JSON.stringify(localParts));
+                window.hasSubmittedFinal = true;
+                
+                document.getElementById('btn-save-draft').classList.add('hidden');
+                document.getElementById('btn-submit').classList.add('hidden');
+                document.getElementById('action-msg').innerHTML = "<strong class='text-red-500'>⚠️ Le tue scelte sono definitive, bloccate e non possono essere modificate.</strong>";
+                renderEvents();
+
+                alert("Pronostici salvati in modalità locale e resi definitivi con successo! 🎉");
+            }
+        }
+
+        window.generatePDF = async function() {
+            const nickname = document.getElementById('participant-nickname').value.trim() || "Partecipante";
+            const { jsPDF } = window.jspdf;
+            const docPdf = new jsPDF();
+
+            docPdf.setFont("helvetica", "bold");
+            docPdf.setFontSize(18);
+            /* Aggiornato a colore Arancione RGB per il PDF */
+            docPdf.setTextColor(234, 88, 12);
+            docPdf.text("2026 Asian Games - Riepilogo Pronostici", 14, 20);
+
+            docPdf.setFontSize(11);
+            docPdf.setTextColor(100, 100, 100);
+            docPdf.text(`Partecipante: ${nickname}`, 14, 28);
+            docPdf.text(`Data generazione: ${new Date().toLocaleDateString()}`, 14, 34);
+
+            let y = 45;
+            docPdf.setFontSize(10);
+            window.eventsData.forEach((ev) => {
+                const userSel = window.userSelections[ev.id];
+                const selText = userSel ? `[${userSel.key.toUpperCase()}] ${userSel.text}` : "Nessuna scelta";
+                
+                if(y > 270) {
+                    docPdf.addPage();
+                    y = 20;
+                }
+
+                docPdf.setFont("helvetica", "bold");
+                docPdf.setTextColor(40, 40, 40);
+                docPdf.text(`${ev.id}. ${ev.evento} (${ev.sport})`, 14, y);
+                y += 6;
+
+                docPdf.setFont("helvetica", "normal");
+                /* Testo selezione in arancione scuro */
+                docPdf.setTextColor(234, 88, 12);
+                docPdf.text(`Scelta: ${selText}`, 18, y);
+                y += 10;
+            });
+
+            docPdf.save(`Pronostici_AsianGames_${nickname}.pdf`);
+        }
+
+        window.toggleAdminLogin = function() {
+            const panel = document.getElementById('admin-panel');
+            panel.classList.toggle('hidden');
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
+        window.verifyAdmin = async function() {
+            const pass = document.getElementById('admin-pass').value;
+            if(pass === "Stefan023*") {
+                document.getElementById('admin-login-box').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+                
+                await fetchEventsFromCloud(); 
+                renderAdminAnswersSetup();
+                
+                loadAdminAnswers();
+                loadParticipantsData();
+            } else {
+                alert("Password errata!");
+            }
+        }
+
+        window.switchAdminTab = function(tabId) {
+            ['tab-excel', 'tab-risposte', 'tab-ranking'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            ['btn-tab-excel', 'btn-tab-risposte', 'btn-tab-ranking'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.className = "pb-2 font-bold text-gray-400 hover:text-themeOrange";
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            let activeBtnId = 'btn-tab-excel';
+            if(tabId === 'tab-risposte') activeBtnId = 'btn-tab-risposte';
+            if(tabId === 'tab-ranking') activeBtnId = 'btn-tab-ranking';
+            
+            document.getElementById(activeBtnId).className = "pb-2 font-bold text-themeOrange border-b-2 border-themeOrange";
+        }
+
+        function renderAdminAnswersSetup() {
+            const container = document.getElementById('admin-answers-container');
+            container.innerHTML = '';
+            
+            if(!window.eventsData || window.eventsData.length === 0) {
+                 container.innerHTML = '<p class="text-sm text-gray-500">Nessun evento caricato. Vai su "Carica Excel".</p>';
+                 return;
+            }
+
+            window.eventsData.forEach(ev => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-gray-50 rounded border";
+                div.innerHTML = `
+                    <p class="font-bold text-sm mb-1">${ev.id}. ${ev.evento}</p>
+                    <select id="correct_${ev.id}" class="w-full text-sm p-1 border rounded bg-white">
+                        <option value="">-- Seleziona Risposta Corretta --</option>
+                        <option value="A">Picking A (15 pt): ${ev.A}</option>
+                        <option value="B">Picking B (18 pt): ${ev.B}</option>
+                        <option value="C">Picking C (25 pt): ${ev.C}</option>
+                        <option value="field">Picking field (10 pt): ${ev.field}</option>
+                    </select>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.saveCorrectAnswers = async function() {
+            window.correctAnswers = {};
+            window.eventsData.forEach(ev => {
+                const val = document.getElementById(`correct_${ev.id}`).value;
+                if(val) window.correctAnswers[ev.id] = val;
+            });
+
+            if(isFirebaseActive && db) {
+                await setDoc(doc(db, "settings", "correctAnswers"), { answers: window.correctAnswers });
+            }
+            localStorage.setItem('correct_answers', JSON.stringify(window.correctAnswers));
+            alert("Risposte corrette salvate con successo!");
+            loadParticipantsData();
+        }
+
+        async function loadAdminAnswers() {
+            if(isFirebaseActive && db) {
+                const docSnap = await getDoc(doc(db, "settings", "correctAnswers"));
+                if(docSnap.exists()) {
+                    window.correctAnswers = docSnap.data().answers || {};
+                }
+            } else {
+                window.correctAnswers = JSON.parse(localStorage.getItem('correct_answers') || "{}");
+            }
+            for(let id in window.correctAnswers) {
+                const sel = document.getElementById(`correct_${id}`);
+                if(sel) sel.value = window.correctAnswers[id];
+            }
+        }
+
+        window.loadParticipantsData = async function() {
+            let participantsList = [];
+
+            if(isFirebaseActive && db) {
+                const querySnapshot = await getDocs(collection(db, "participants"));
+                querySnapshot.forEach((docSnap) => {
+                    participantsList.push(docSnap.data());
+                });
+            } else {
+                let localParts = JSON.parse(localStorage.getItem('local_participants') || "{}");
+                participantsList = Object.values(localParts);
+            }
+
+            const pointsMap = { 'A': 15, 'B': 18, 'C': 25, 'field': 10 };
+
+            participantsList.forEach(p => {
+                let score = 0;
+                for(let evId in p.selections) {
+                    const userChoice = p.selections[evId].key;
+                    const correctChoice = window.correctAnswers[evId];
+                    if(correctChoice && userChoice === correctChoice) {
+                        score += (pointsMap[correctChoice] || 0);
+                    }
+                }
+                p.score = score;
+            });
+
+            participantsList.sort((a, b) => b.score - a.score);
+            window.lastParticipantsList = participantsList; 
+
+            const tbody = document.getElementById('ranking-tbody');
+            tbody.innerHTML = '';
+
+            if(participantsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-400">Nessun partecipante registrato finora.</td></tr>`;
+                return;
+            }
+
+            participantsList.forEach((p, idx) => {
+                const isDraftStr = p.isDraft ? '<span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">In Bozza</span>' : '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Inviato</span>';
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-orange-50 transition";
+                tr.innerHTML = `
+                    <td class="p-2 font-bold">#${idx + 1}</td>
+                    <td class="p-2 font-semibold text-themeOrange">${p.nickname}</td>
+                    <td class="p-2">${isDraftStr}</td>
+                    <td class="p-2 font-bold text-gray-800">${p.score} pt</td>
+                    <td class="p-2 text-center space-x-2">
+                        <button onclick='showParticipantDetail(${JSON.stringify(p)})' class="bg-orange-100 text-themeOrange px-2 py-1 rounded text-xs font-bold hover:bg-orange-200 transition">👁️ Vedi</button>
+                        <button onclick="deleteParticipant('${p.nickname}')" class="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-bold hover:bg-red-200 transition">🗑️ Elimina</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        window.exportToGoogleSheets = function() {
+            if(!window.lastParticipantsList || window.lastParticipantsList.length === 0) {
+                alert("Non ci sono dati da esportare!");
+                return;
+            }
+            
+            let dataForExcel = [];
+            
+            let headers = ["Nickname", "Stato", "Punteggio Totale"];
+            window.eventsData.forEach(ev => {
+                headers.push(`Evento ${ev.id}: ${ev.evento}`);
+            });
+            dataForExcel.push(headers);
+            
+            window.lastParticipantsList.forEach(p => {
+                const stato = p.isDraft ? "In Bozza" : "Inviato";
+                let row = [p.nickname, stato, p.score];
+                window.eventsData.forEach(ev => {
+                    let sel = p.selections[ev.id];
+                    row.push(sel ? sel.text : "Nessuna Scelta");
+                });
+                dataForExcel.push(row);
+            });
+            
+            const ws = XLSX.utils.aoa_to_sheet(dataForExcel);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Pronostici_AsianGames");
+            XLSX.writeFile(wb, "Pronostici_AsianGames_FogliGoogle.xlsx");
+        }
+
+        window.showParticipantDetail = function(part) {
+            document.getElementById('modal-title').innerText = `Pronostico di: ${part.nickname} (${part.score} pt)`;
+            const content = document.getElementById('modal-content');
+            content.innerHTML = '';
+
+            for(let evId in part.selections) {
+                const sel = part.selections[evId];
+                const correct = window.correctAnswers[evId];
+                const isCorrect = correct && sel.key === correct;
+                const div = document.createElement('div');
+                div.className = `p-2 rounded border ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-gray-50'}`;
+                div.innerHTML = `
+                    <p class="font-bold text-xs text-gray-600">Evento #${evId}</p>
+                    <p class="text-sm">Scelta: <strong class="text-themeOrange">[${sel.key.toUpperCase()}]</strong> ${sel.text}</p>
+                    ${correct ? `<p class="text-xs ${isCorrect ? 'text-green-600 font-bold' : 'text-red-500'}">Esatta era: [${correct.toUpperCase()}]</p>` : ''}
+                `;
+                content.appendChild(div);
+            }
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        window.closeModal = function() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        }
+
+        window.deleteParticipant = async function(nickname) {
+            if(confirm(`Sei sicuro di voler eliminare il partecipante ${nickname}?`)) {
+                if(isFirebaseActive && db) {
+                    try {
+                        await deleteDoc(doc(db, "participants", nickname));
+                    } catch(e) {
+                        console.error(e);
+                    }
+                } else {
+                    let localParts = JSON.parse(localStorage.getItem('local_participants') || "{}");
+                    delete localParts[nickname];
+                    localStorage.setItem('local_participants', JSON.stringify(localParts));
+                }
+                alert("Partecipante eliminato.");
+                loadParticipantsData();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchEventsFromCloud();
+        });
+    </script>
+</body>
+</html>
