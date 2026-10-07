@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 Asian Games Contest - By Vier</title>
+    <title>Dakar 2026 Contest - By Vier</title>
     <!-- Tailwind CSS per una grafica moderna e pulita -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -32,9 +32,10 @@
     <header class="bg-gradient-to-r from-themeOrange to-themeYellow text-white shadow-lg border-b-4 border-themeDark">
         <div class="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
             <div class="flex items-center space-x-4">
-                <img src="logo.jpg" alt="Logo Asian Games 2026" class="h-16 w-auto object-contain bg-white rounded shadow p-1 border-2 border-themeYellow" onerror="this.style.display='none'">
+                <!-- LOGO DAKAR -->
+                <img src="logo.jpg" alt="Logo Dakar 2026" class="h-16 w-auto object-contain bg-white rounded shadow p-1 border-2 border-themeYellow" onerror="this.style.display='none'">
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-black tracking-wider text-white drop-shadow-md">ASIAN GAMES 2026</h1>
+                    <h1 class="text-2xl sm:text-3xl font-black tracking-wider text-white drop-shadow-md">DAKAR 2026</h1>
                 </div>
             </div>
         </div>
@@ -167,7 +168,7 @@
 
     <!-- FOOTER -->
     <footer class="bg-themeDark text-orange-200 text-xs py-4 text-center border-t border-orange-900">
-        <p>2026 Asian Games Contest Hub • Grafica ufficiale Arancione e Giallo • Sviluppato per Gualtiero</p>
+        <p>Dakar 2026 Contest Hub • Grafica ufficiale Arancione e Giallo • Sviluppato per Gualtiero</p>
     </footer>
 
     <!-- MODALE DETTAGLIO PRONOSTICO PARTECIPANTE -->
@@ -215,17 +216,17 @@
         async function fetchEventsFromCloud() {
             if(isFirebaseActive && db) {
                 try {
-                    const docSnap = await getDoc(doc(db, "settings", "eventsData"));
+                    const docSnap = await getDoc(doc(db, "settings", "eventsData_dakar"));
                     if(docSnap.exists()) {
                         window.eventsData = docSnap.data().events || [];
-                        localStorage.setItem('asian_events', JSON.stringify(window.eventsData));
+                        localStorage.setItem('dakar_events', JSON.stringify(window.eventsData));
                     }
                 } catch(err) {
                     console.error("Errore recupero eventi cloud:", err);
                 }
             }
             if(!window.eventsData.length) {
-                const savedEvents = localStorage.getItem('asian_events');
+                const savedEvents = localStorage.getItem('dakar_events');
                 if(savedEvents) {
                     window.eventsData = JSON.parse(savedEvents);
                 }
@@ -259,7 +260,7 @@
 
             if(isFirebaseActive && db) {
                 try {
-                    const docSnap = await getDoc(doc(db, "participants", nick));
+                    const docSnap = await getDoc(doc(db, "participants_dakar", nick));
                     if(docSnap.exists()) {
                         const data = docSnap.data();
                         window.userSelections = data.selections || {};
@@ -276,7 +277,7 @@
                     console.error("Errore recupero dati utente:", err);
                 }
             } else {
-                let localParts = JSON.parse(localStorage.getItem('local_participants') || "{}");
+                let localParts = JSON.parse(localStorage.getItem('local_participants_dakar') || "{}");
                 if(localParts[nick]) {
                     const data = localParts[nick];
                     window.userSelections = data.selections || {};
@@ -358,13 +359,13 @@
 
                 if(isFirebaseActive && db) {
                     try {
-                        await setDoc(doc(db, "settings", "eventsData"), { events: window.eventsData });
+                        await setDoc(doc(db, "settings", "eventsData_dakar"), { events: window.eventsData });
                     } catch(err) {
                         console.error("Errore salvataggio eventi su Firebase:", err);
                     }
                 }
 
-                localStorage.setItem('asian_events', JSON.stringify(window.eventsData));
+                localStorage.setItem('dakar_events', JSON.stringify(window.eventsData));
                 renderAdminAnswersSetup();
                 
                 const total = window.eventsData.length;
@@ -449,16 +450,16 @@
 
             if(isFirebaseActive && db) {
                 try {
-                    await setDoc(doc(db, "participants", nickname), payload);
+                    await setDoc(doc(db, "participants_dakar", nickname), payload);
                     alert("💾 Bozza salvata con successo! Puoi chiudere la pagina e tornare quando vuoi reinserendo il tuo nickname.");
                 } catch(err) {
                     console.error(err);
                     alert("Errore durante il salvataggio.");
                 }
             } else {
-                let localParts = JSON.parse(localStorage.getItem('local_participants') || "{}");
+                let localParts = JSON.parse(localStorage.getItem('local_participants_dakar') || "{}");
                 localParts[nickname] = payload;
-                localStorage.setItem('local_participants', JSON.stringify(localParts));
+                localStorage.setItem('local_participants_dakar', JSON.stringify(localParts));
                 alert("💾 Bozza salvata in locale con successo!");
             }
         }
@@ -484,7 +485,7 @@
 
             if(isFirebaseActive && db) {
                 try {
-                    await setDoc(doc(db, "participants", nickname), payload);
+                    await setDoc(doc(db, "participants_dakar", nickname), payload);
                     window.hasSubmittedFinal = true; // Aggiorna lo stato localmente
                     
                     // Ridisegna la schermata per applicare subito i blocchi di sicurezza
@@ -499,9 +500,9 @@
                     alert("Errore di invio su Firebase. Salva il tuo PDF come backup.");
                 }
             } else {
-                let localParts = JSON.parse(localStorage.getItem('local_participants') || "{}");
+                let localParts = JSON.parse(localStorage.getItem('local_participants_dakar') || "{}");
                 localParts[nickname] = payload;
-                localStorage.setItem('local_participants', JSON.stringify(localParts));
+                localStorage.setItem('local_participants_dakar', JSON.stringify(localParts));
                 window.hasSubmittedFinal = true;
                 
                 document.getElementById('btn-save-draft').classList.add('hidden');
@@ -522,7 +523,7 @@
             docPdf.setFontSize(18);
             /* Aggiornato a colore Arancione RGB per il PDF */
             docPdf.setTextColor(234, 88, 12);
-            docPdf.text("2026 Asian Games - Riepilogo Pronostici", 14, 20);
+            docPdf.text("Dakar 2026 - Riepilogo Pronostici", 14, 20);
 
             docPdf.setFontSize(11);
             docPdf.setTextColor(100, 100, 100);
@@ -552,7 +553,7 @@
                 y += 10;
             });
 
-            docPdf.save(`Pronostici_AsianGames_${nickname}.pdf`);
+            docPdf.save(`Pronostici_Dakar2026_${nickname}.pdf`);
         }
 
         window.toggleAdminLogin = function() {
@@ -628,21 +629,21 @@
             });
 
             if(isFirebaseActive && db) {
-                await setDoc(doc(db, "settings", "correctAnswers"), { answers: window.correctAnswers });
+                await setDoc(doc(db, "settings", "correctAnswers_dakar"), { answers: window.correctAnswers });
             }
-            localStorage.setItem('correct_answers', JSON.stringify(window.correctAnswers));
+            localStorage.setItem('correct_answers_dakar', JSON.stringify(window.correctAnswers));
             alert("Risposte corrette salvate con successo!");
             loadParticipantsData();
         }
 
         async function loadAdminAnswers() {
             if(isFirebaseActive && db) {
-                const docSnap = await getDoc(doc(db, "settings", "correctAnswers"));
+                const docSnap = await getDoc(doc(db, "settings", "correctAnswers_dakar"));
                 if(docSnap.exists()) {
                     window.correctAnswers = docSnap.data().answers || {};
                 }
             } else {
-                window.correctAnswers = JSON.parse(localStorage.getItem('correct_answers') || "{}");
+                window.correctAnswers = JSON.parse(localStorage.getItem('correct_answers_dakar') || "{}");
             }
             for(let id in window.correctAnswers) {
                 const sel = document.getElementById(`correct_${id}`);
@@ -654,12 +655,12 @@
             let participantsList = [];
 
             if(isFirebaseActive && db) {
-                const querySnapshot = await getDocs(collection(db, "participants"));
+                const querySnapshot = await getDocs(collection(db, "participants_dakar"));
                 querySnapshot.forEach((docSnap) => {
                     participantsList.push(docSnap.data());
                 });
             } else {
-                let localParts = JSON.parse(localStorage.getItem('local_participants') || "{}");
+                let localParts = JSON.parse(localStorage.getItem('local_participants_dakar') || "{}");
                 participantsList = Object.values(localParts);
             }
 
@@ -732,8 +733,8 @@
             
             const ws = XLSX.utils.aoa_to_sheet(dataForExcel);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Pronostici_AsianGames");
-            XLSX.writeFile(wb, "Pronostici_AsianGames_FogliGoogle.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Pronostici_Dakar");
+            XLSX.writeFile(wb, "Pronostici_Dakar2026_FogliGoogle.xlsx");
         }
 
         window.showParticipantDetail = function(part) {
@@ -765,14 +766,14 @@
             if(confirm(`Sei sicuro di voler eliminare il partecipante ${nickname}?`)) {
                 if(isFirebaseActive && db) {
                     try {
-                        await deleteDoc(doc(db, "participants", nickname));
+                        await deleteDoc(doc(db, "participants_dakar", nickname));
                     } catch(e) {
                         console.error(e);
                     }
                 } else {
-                    let localParts = JSON.parse(localStorage.getItem('local_participants') || "{}");
+                    let localParts = JSON.parse(localStorage.getItem('local_participants_dakar') || "{}");
                     delete localParts[nickname];
-                    localStorage.setItem('local_participants', JSON.stringify(localParts));
+                    localStorage.setItem('local_participants_dakar', JSON.stringify(localParts));
                 }
                 alert("Partecipante eliminato.");
                 loadParticipantsData();
